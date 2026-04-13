@@ -38,6 +38,75 @@ interface EvalResult {
   judge: JudgeResult;
 }
 
+interface ChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
+// --- LLM Provider abstraction ---
+
+interface LLMProvider {
+  chat(messages: ChatMessage[], maxTokens: number): Promise<string>;
+}
+
+class AnthropicProvider implements LLMProvider {
+  private client: Anthropic;
+  private model: string;
+
+  constructor(model: string) {
+    this.client = new Anthropic();
+    this.model = model;
+  }
+
+  async chat(messages: ChatMessage[], maxTokens: number): Promise<string> {
+    const systemMsg = messages.find((m) => m.role === "system");
+    const userMessages = messages
+      .filter((m) => m.role !== "system")
+      .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+
+    const response = await this.client.messages.create({
+      model: this.model,
+      max_tokens: maxTokens,
+      ...(systemMsg ? { system: systemMsg.content } : {}),
+      messages: userMessages,
+    });
+
+    const block = response.content[0];
+    return block.type === "text" ? block.text : "";
+  }
+}
+
+class OllamaProvider implements LLMProvider {
+  private baseUrl: string;
+  private model: string;
+
+  constructor(model: string, baseUrl: string) {
+    this.baseUrl = baseUrl.replace(/\/$/, "");
+    this.model = model;
+  }
+
+  async chat(messages: ChatMessage[], maxTokens: number): Promise<string> {
+    const response = await fetch(`${this.baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: this.model,
+        messages,
+        stream: false,
+        options: { num_predict: maxTokens },
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Ollama error ${response.status}: ${text}`);
+    }
+
+    const data = (await response.json()) as { message?: { content?: string } };
+    return data.message?.content ?? "";
+  }
+}
+
 // --- File loaders ---
 
 function loadJson<T>(filename: string): T {
@@ -54,6 +123,28 @@ function loadPromptTemplate(): string {
     throw new Error("eval-prompt.md not found");
   }
   return readFileSync(filepath, "utf-8");
+}
+
+// --- Provider factory ---
+
+function createProvider(model: string, role: "chat" | "judge"): LLMProvider {
+  const provider = (process.env.LLM_PROVIDER ?? "anthropic").toLowerCase();
+
+  if (provider === "ollama") {
+    const baseUrl = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
+    return new OllamaProvider(model, baseUrl);
+  }
+
+  if (provider === "anthropic") {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error("Error: ANTHROPIC_API_KEY environment variable is required.");
+      console.error("Export it with: export ANTHROPIC_API_KEY=sk-ant-...");
+      process.exit(1);
+    }
+    return new AnthropicProvider(model);
+  }
+
+  throw new Error(`Unknown LLM_PROVIDER: "${provider}". Use "anthropic" or "ollama".`);
 }
 
 // --- Core logic ---
@@ -74,35 +165,26 @@ function buildEvalPrompt(
 }
 
 async function generateChatbotResponse(
-  client: Anthropic,
+  provider: LLMProvider,
   config: InitConfig,
   testCase: TestCase
 ): Promise<string> {
   const systemPrompt = `${config["system-task"]}\n\nIMPORTANTE: Responde ÚNICAMENTE con base en el siguiente contexto. Si la pregunta no se puede responder con el contexto, dilo claramente.\n\nContexto:\n${testCase.context ?? "Sin contexto."}`;
 
-  const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 500,
-    system: systemPrompt,
-    messages: [{ role: "user", content: testCase.input }],
-  });
-
-  const block = response.content[0];
-  return block.type === "text" ? block.text : "";
+  return provider.chat(
+    [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: testCase.input },
+    ],
+    500
+  );
 }
 
 async function judgeResponse(
-  client: Anthropic,
+  provider: LLMProvider,
   prompt: string
 ): Promise<JudgeResult> {
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-6-20250514",
-    max_tokens: 500,
-    messages: [{ role: "user", content: prompt }],
-  });
-
-  const block = response.content[0];
-  const text = block.type === "text" ? block.text : "";
+  const text = await provider.chat([{ role: "user", content: prompt }], 500);
 
   // Extract JSON from response (handles markdown code blocks)
   const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -152,30 +234,36 @@ function printSummary(results: EvalResult[]): void {
 // --- Main ---
 
 async function main(): Promise<void> {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("Error: ANTHROPIC_API_KEY environment variable is required.");
-    console.error("Export it with: export ANTHROPIC_API_KEY=sk-ant-...");
-    process.exit(1);
-  }
+  const provider = (process.env.LLM_PROVIDER ?? "anthropic").toLowerCase();
+  const isOllama = provider === "ollama";
+
+  const defaultChatModel = isOllama ? "llama3.2" : "claude-haiku-4-5-20251001";
+  const defaultJudgeModel = isOllama ? "llama3.2" : "claude-sonnet-4-6-20250514";
+
+  const chatModel = process.env.CHAT_MODEL ?? defaultChatModel;
+  const judgeModel = process.env.JUDGE_MODEL ?? defaultJudgeModel;
+  const ollamaUrl = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
 
   console.log("Loading configuration...");
   const config = loadJson<InitConfig>("init.json");
   const testCases = loadJson<TestCase[]>("test-dataset.json");
   const promptTemplate = loadPromptTemplate();
 
+  console.log(`Provider:    ${provider}${isOllama ? ` (${ollamaUrl})` : ""}`);
   console.log(`System task: ${config["system-task"].substring(0, 80)}...`);
   console.log(`Test cases:  ${testCases.length}`);
-  console.log(`Eval model:  claude-sonnet-4-6 (judge)`);
-  console.log(`Chat model:  claude-haiku-4-5 (chatbot under test)`);
+  console.log(`Judge model: ${judgeModel}`);
+  console.log(`Chat model:  ${chatModel}`);
 
-  const client = new Anthropic();
+  const chatProvider = createProvider(chatModel, "chat");
+  const judgeProvider = createProvider(judgeModel, "judge");
   const results: EvalResult[] = [];
 
   for (const testCase of testCases) {
     process.stdout.write(`\nRunning ${testCase.id}...`);
 
     // Step 1: Generate chatbot response
-    const aiResponse = await generateChatbotResponse(client, config, testCase);
+    const aiResponse = await generateChatbotResponse(chatProvider, config, testCase);
 
     // Step 2: Build the eval prompt with the actual response
     const evalPrompt = buildEvalPrompt(
@@ -186,7 +274,7 @@ async function main(): Promise<void> {
     );
 
     // Step 3: Judge the response
-    const judgeResult = await judgeResponse(client, evalPrompt);
+    const judgeResult = await judgeResponse(judgeProvider, evalPrompt);
 
     const result: EvalResult = {
       test_id: testCase.id,

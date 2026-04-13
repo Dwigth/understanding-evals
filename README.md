@@ -33,7 +33,20 @@ understanding-evals/
 
 ```bash
 npm install
+```
+
+**With Anthropic (default):**
+```bash
 export ANTHROPIC_API_KEY=sk-ant-...
+npm run eval
+```
+
+**With Ollama (local, no API key needed):**
+```bash
+# Make sure Ollama is running and you have a model pulled, e.g.:
+# ollama pull llama3.2
+export LLM_PROVIDER=ollama
+npm run eval
 ```
 
 ## Usage
@@ -112,10 +125,22 @@ The average score determines the verdict:
 
 ## Models used
 
-| Role | Model | Why |
-|------|-------|-----|
-| Chatbot (under test) | `claude-haiku-4-5` | Fast and cheap — simulates the production chatbot |
-| Judge | `claude-sonnet-4-6` | More capable model to evaluate quality |
+| Role | Default (Anthropic) | Default (Ollama) |
+|------|---------------------|------------------|
+| Chatbot (under test) | `claude-haiku-4-5` | `llama3.2` |
+| Judge | `claude-sonnet-4-6` | `llama3.2` |
+
+Override models with env vars: `CHAT_MODEL` and `JUDGE_MODEL`.
+
+## Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LLM_PROVIDER` | `anthropic` | Provider to use: `anthropic` or `ollama` |
+| `ANTHROPIC_API_KEY` | — | Required when using `anthropic` provider |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
+| `CHAT_MODEL` | provider default | Model for the chatbot under test |
+| `JUDGE_MODEL` | provider default | Model used as judge |
 
 ## Example output
 
