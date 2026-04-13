@@ -1,0 +1,13 @@
+{
+  "name": "understanding-evals",
+  "version": "1.0.0",
+  "description": "Framework sencillo de evaluaciones LLM-as-Judge para entender cómo funcionan los evals",
+  "type": "module",
+  "scripts": {
+    "eval": "npx tsx run-eval.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "tsx": "^4.19.0"
+  }
+}

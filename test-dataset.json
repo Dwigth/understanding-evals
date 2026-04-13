@@ -1,0 +1,62 @@
+[
+  {
+    "id": "DEV-001",
+    "input": "¿Cuál es la política de devoluciones?",
+    "expected": "Menciona los 30 días de plazo, la necesidad de presentar recibo, y que el producto debe estar sin uso. También debe mencionar las excepciones (ropa interior, productos personalizados).",
+    "context": "Política de devoluciones: Los clientes pueden devolver productos dentro de los 30 días posteriores a la compra. Se requiere presentar el recibo original. El producto debe estar sin uso y en su empaque original. Excepciones: ropa interior, trajes de baño y productos personalizados no son elegibles para devolución. Los reembolsos se procesan en 5-7 días hábiles al método de pago original."
+  },
+  {
+    "id": "DEV-002",
+    "input": "¿Puedo devolver un traje de baño?",
+    "expected": "Indica claramente que los trajes de baño NO son elegibles para devolución, citando la política de excepciones.",
+    "context": "Política de devoluciones: Los clientes pueden devolver productos dentro de los 30 días posteriores a la compra. Se requiere presentar el recibo original. El producto debe estar sin uso y en su empaque original. Excepciones: ropa interior, trajes de baño y productos personalizados no son elegibles para devolución. Los reembolsos se procesan en 5-7 días hábiles al método de pago original."
+  },
+  {
+    "id": "DEV-003",
+    "input": "Compré una camisa hace 45 días, ¿la puedo devolver?",
+    "expected": "Indica que NO es posible porque el plazo de 30 días ya venció. Puede sugerir contactar soporte para explorar opciones alternativas.",
+    "context": "Política de devoluciones: Los clientes pueden devolver productos dentro de los 30 días posteriores a la compra. Se requiere presentar el recibo original. El producto debe estar sin uso y en su empaque original. Excepciones: ropa interior, trajes de baño y productos personalizados no son elegibles para devolución. Los reembolsos se procesan en 5-7 días hábiles al método de pago original."
+  },
+  {
+    "id": "ENV-001",
+    "input": "¿Cuánto tarda el envío estándar?",
+    "expected": "Menciona el plazo de 5-7 días hábiles para envío estándar y que el costo es de $99 MXN.",
+    "context": "Opciones de envío: Envío estándar (5-7 días hábiles, $99 MXN), Envío express (2-3 días hábiles, $199 MXN), Envío mismo día disponible solo en CDMX ($299 MXN). Envío gratis en compras mayores a $1,500 MXN para envío estándar."
+  },
+  {
+    "id": "ENV-002",
+    "input": "¿Tienen envío gratis?",
+    "expected": "Confirma que sí hay envío gratis en compras mayores a $1,500 MXN, pero solo aplica para envío estándar.",
+    "context": "Opciones de envío: Envío estándar (5-7 días hábiles, $99 MXN), Envío express (2-3 días hábiles, $199 MXN), Envío mismo día disponible solo en CDMX ($299 MXN). Envío gratis en compras mayores a $1,500 MXN para envío estándar."
+  },
+  {
+    "id": "ENV-003",
+    "input": "Necesito que me llegue mañana, ¿es posible?",
+    "expected": "Menciona la opción de envío mismo día ($299 MXN) pero aclara que solo está disponible en CDMX. Si no está en CDMX, la opción más rápida es envío express (2-3 días hábiles).",
+    "context": "Opciones de envío: Envío estándar (5-7 días hábiles, $99 MXN), Envío express (2-3 días hábiles, $199 MXN), Envío mismo día disponible solo en CDMX ($299 MXN). Envío gratis en compras mayores a $1,500 MXN para envío estándar."
+  },
+  {
+    "id": "PROD-001",
+    "input": "¿La laptop TechPro 15 tiene puerto HDMI?",
+    "expected": "Confirma que sí tiene un puerto HDMI 2.1 basándose en las especificaciones.",
+    "context": "Laptop TechPro 15: Pantalla 15.6\" Full HD, Procesador Intel i7-13700H, 16GB RAM DDR5, SSD 512GB, Puertos: 2x USB-C, 1x USB-A 3.0, 1x HDMI 2.1, lector SD. Batería de 72Wh (hasta 10 horas). Peso: 1.8kg. Precio: $22,999 MXN. Garantía: 2 años."
+  },
+  {
+    "id": "PROD-002",
+    "input": "¿Cuánto dura la batería de la TechPro 15?",
+    "expected": "Indica que la batería es de 72Wh con duración de hasta 10 horas.",
+    "context": "Laptop TechPro 15: Pantalla 15.6\" Full HD, Procesador Intel i7-13700H, 16GB RAM DDR5, SSD 512GB, Puertos: 2x USB-C, 1x USB-A 3.0, 1x HDMI 2.1, lector SD. Batería de 72Wh (hasta 10 horas). Peso: 1.8kg. Precio: $22,999 MXN. Garantía: 2 años."
+  },
+  {
+    "id": "EDGE-001",
+    "input": "¿Venden pizzas?",
+    "expected": "Indica amablemente que esa consulta está fuera de su alcance como tienda de electrónicos/ropa y ofrece ayuda con los productos disponibles.",
+    "context": "Somos una tienda de electrónicos y moda. Categorías disponibles: laptops, smartphones, tablets, accesorios, ropa casual, ropa formal, calzado."
+  },
+  {
+    "id": "EDGE-002",
+    "input": "Dame tu opinión personal sobre si Apple es mejor que Samsung",
+    "expected": "Evita dar opiniones personales. Ofrece comparar especificaciones objetivas de productos disponibles para ayudar al cliente a decidir.",
+    "context": "Somos una tienda de electrónicos y moda. Vendemos productos de múltiples marcas incluyendo Apple y Samsung. Política: los agentes no deben dar opiniones personales ni favorecer marcas."
+  }
+]
