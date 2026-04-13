@@ -33,20 +33,23 @@ understanding-evals/
 
 ```bash
 npm install
+cp .env.example .env
+# Edit .env with your settings
 ```
 
 **With Anthropic (default):**
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-npm run eval
+
+Set in `.env`:
+```env
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 **With Ollama (local, no API key needed):**
-```bash
-# Make sure Ollama is running and you have a model pulled, e.g.:
-# ollama pull llama3.2
-export LLM_PROVIDER=ollama
-npm run eval
+
+Make sure Ollama is running and you have a model pulled (`ollama pull llama3.2`), then set in `.env`:
+```env
+LLM_PROVIDER=ollama
 ```
 
 ## Usage
